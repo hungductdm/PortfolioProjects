@@ -375,7 +375,7 @@ Answer some questions about New York city using geometries functions.
     | "motorway_link; residential"                       | 215.08     |
     ```
 
-3. **Calculate some sumary statistics about New York streets.**
+3. **Calculate some summary statistics about New York streets.**
 
     ```sql
     SELECT
