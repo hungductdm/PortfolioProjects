@@ -163,7 +163,7 @@ Select layers to display from the **Layers** panel.
 ![](images/successful%20layer%20view%20qgis.png)
 
 
-## RUNNING SIMPLE SQL QUERIES
+## RUNNING NON-SPATIAL SQL QUERIES
 
 I will answer some questions about the datasets using SQL.
 
@@ -316,4 +316,90 @@ I will answer some questions about the datasets using SQL.
     | "Manhattan"     | 8175032          | 1585873            | 140              | 11328                | 62                       | 25579                    |
     | "The Bronx"     | 8175032          | 1385108            |                  |                      |                          |                          |
     | "Staten Island" | 8175032          | 468730             | 22               | 21306                | 0                        |                          |
+    ```
+
+## RUNNING GEOMETRIES FUNCTIONS
+
+Answer some questions about New York city using geometries functions.
+
+1. **What is the total length of all streets in New York in kilometers?**
+
+    ```sql
+    SELECT ROUND(SUM(ST_Length(geom))::numeric / 1000, 2) AS total_length_km
+    FROM nyc_streets;
+    ```
+
+    Output:
+
+    ```powershell
+    "total_length_km"
+    10418.90
+    ```
+
+2. **How many types of streets are there and what is the total length of each type?**
+
+    ```sql
+    SELECT 
+      type,
+      ROUND(SUM(ST_Length(geom))::numeric, 2) AS length_m
+    FROM nyc_streets
+    GROUP BY type
+    ORDER BY length_m DESC;
+    ```
+
+    Output:
+
+    ```powershell
+    | "type"                                             | "length_m" |
+    |----------------------------------------------------|------------|
+    | "residential"                                      | 8629870.34 |
+    | "motorway"                                         | 403622.48  |
+    | "tertiary"                                         | 360394.88  |
+    | "motorway_link"                                    | 294261.42  |
+    | "secondary"                                        | 276264.30  |
+    | "unclassified"                                     | 166936.37  |
+    | "primary"                                          | 135034.23  |
+    | "footway"                                          | 71798.49   |
+    | "service"                                          | 28337.64   |
+    | "trunk"                                            | 20353.58   |
+    | "cycleway"                                         | 8863.75    |
+    | "pedestrian"                                       | 4867.05    |
+    | "construction"                                     | 4803.08    |
+    | "residential; motorway_link"                       | 3661.58    |
+    | "trunk_link"                                       | 3202.19    |
+    | "primary_link"                                     | 2492.57    |
+    | "living_street"                                    | 1894.64    |
+    | "primary; residential; motorway_link; residential" | 1367.77    |
+    | "undefined"                                        | 380.54     |
+    | "steps"                                            | 282.75     |
+    | "motorway_link; residential"                       | 215.08     |
+    ```
+
+3. **Calculate some sumary statistics about New York streets.**
+
+    ```sql
+    SELECT
+      ROUND(SUM(ST_Length(geom))) AS total_res_length_m,
+      ROUND(AVG(ST_Length(geom))::numeric, 2) AS avg_res_length,
+      ROUND(percentile_cont(.5) 
+          WITHIN GROUP (ORDER BY ST_Length(geom))::numeric, 2) 
+          AS median_res_length,
+      ROUND(MAX(ST_Length(geom))) AS longest_length,
+      (
+        SELECT name 
+        FROM nyc_streets 
+        WHERE ST_Length(geom) = (
+          SELECT MAX(ST_Length(geom)) 
+          FROM nyc_streets
+        )
+      ) AS longest_street
+    FROM nyc_streets;
+    ```
+
+    Output:
+
+    ```powershell
+    | "total_res_length_m" | "avg_res_length" | "median_res_length" | "longest_length" | "longest_street"  |
+    |----------------------|------------------|---------------------|------------------|-------------------|
+    | 10418905             | 545.75           | 269.11              | 14918            | "Leif Ericson Dr" |
     ```
